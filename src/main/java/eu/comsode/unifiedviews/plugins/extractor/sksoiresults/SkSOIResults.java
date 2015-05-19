@@ -1,7 +1,5 @@
 package eu.comsode.unifiedviews.plugins.extractor.sksoiresults;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
@@ -59,11 +57,9 @@ public class SkSOIResults extends AbstractDpu<SkSOIResultsConfig_V1> {
             Elements links = list.select("a[href]");
 
             Set<String> listOfLinks = new HashSet<String>();
-            int count = 0;
             for (Element link : links) {
-                count = listOfLinks.size();
-                listOfLinks.add(link.absUrl("href"));
-                if (count == listOfLinks.size()) {
+                if (!listOfLinks.add(link.absUrl("href"))) {
+                    LOG.warn("This link is already in the list: " + link.absUrl("href"));
                     continue;
                 }
                 docInner = Jsoup.connect(link.absUrl("href")).userAgent("Mozilla").get();
@@ -107,28 +103,9 @@ public class SkSOIResults extends AbstractDpu<SkSOIResultsConfig_V1> {
                 try {
                     connection.close();
                 } catch (RepositoryException ex) {
-                    LOG.warn("Error in close", ex);
+                    LOG.warn("Error closing connection.", ex);
                 }
             }
         }
-    }
-
-    public static FileOutputStream openOutputStream(File file) throws IOException {
-        if (file.exists()) {
-            if (file.isDirectory()) {
-                throw new IOException("File '" + file + "' exists but is a directory");
-            }
-            if (file.canWrite() == false) {
-                throw new IOException("File '" + file + "' cannot be written to");
-            }
-        } else {
-            File parent = file.getParentFile();
-            if (parent != null) {
-                if (!parent.mkdirs() && !parent.isDirectory()) {
-                    throw new IOException("Directory '" + parent + "' could not be created");
-                }
-            }
-        }
-        return new FileOutputStream(file);
     }
 }
